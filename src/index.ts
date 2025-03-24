@@ -193,7 +193,6 @@ export class PointService extends Service {
       return { code: 500, msg: '减少积分失败' }
     }
   }
-
   async updateUserName(userid: string, username: string, pluginName?: string): Promise<ApiResponseNoData> {
     pluginName ??= 'unknown'
     try {
@@ -219,22 +218,22 @@ export class PointService extends Service {
   }
 
   // 回写操作，例如扣除的积分后如果需要回写（例如兑换的商品兑换出现异常），可以调用此方法回写积分
-  async rollback(transactionId: string, pluginName?: string): Promise<ApiResponseNoData> {
+  async rollback(userId: string, transactionId: string, pluginName?: string): Promise<ApiResponseNoData> {
     if (TransactionIdGenerator.validate(transactionId) === false) {
-      this.logService.writelog({ userid: '0', operationType: 'rollback', plugin: pluginName, comment: `调用rollback时出现错误：transactionId无效`, statusCode: 400 })
+      this.logService.writelog({ userid: userId, operationType: 'rollback', plugin: pluginName, comment: `调用rollback时出现错误：transactionId无效`, statusCode: 400 })
       return { code: 400, msg: 'transactionId无效' }
     }
     try {
-      const log = await this.ctx.database.get(database_name_log, { transactionId })
+      const log = await this.ctx.database.get(database_name_log, { userid: userId, transactionId: transactionId })
       if (log.length === 0) {
-        this.logService.writelog({ userid: '0', operationType: 'rollback', plugin: pluginName, comment: `调用rollback时出现错误：transactionId无效`, statusCode: 400 })
+        this.logService.writelog({ userid: userId, operationType: 'rollback', plugin: pluginName, comment: `调用rollback时出现错误：transactionId无效`, statusCode: 400 })
         return { code: 400, msg: 'transactionId无效' }
       }
 
       // 检查是否已经回滚过
       if (log[0].isRollback) {
         this.logService.writelog({
-          userid: log[0].userid,
+          userid: userId,
           operationType: 'rollback',
           plugin: pluginName,
           comment: `调用rollback时出现错误：该事务已被回滚`,
@@ -243,19 +242,20 @@ export class PointService extends Service {
         return { code: 400, msg: '该事务已被回滚' }
       }
 
-      const { userid, oldValue } = log[0]
-      await this.ctx.database.set(database_name, { userid }, { points: oldValue })
+      const { userid, oldValue, newValue } = log[0]
+      const nowValue = (await this.ctx.database.get(database_name, { userid }))[0].points
+      await this.ctx.database.set(database_name, { userid: userId }, { points: nowValue - (newValue-oldValue)  })
 
       // 更新原始日志，标记为已回滚
       const rollbackId = this.generateTransactionId()
-      await this.ctx.database.set(database_name_log, { transactionId }, {
+      await this.ctx.database.set(database_name_log, { userid: userId, transactionId: transactionId }, {
         isRollback: true,
         rollbackTransaction: rollbackId
       })
 
       // 创建回滚操作的日志
       this.logService.writelog({
-        userid: userid,
+        userid: userId,
         operationType: 'rollback',
         plugin: pluginName,
         statusCode: 200,
@@ -279,11 +279,7 @@ export class PointService extends Service {
  * @param transactionId 事务ID
  * @returns 回滚状态信息
  */
-  async getTransactionStatus(transactionId: string): Promise<{
-    isRollback: boolean
-    rollbackTransaction?: string
-    rollbackTime?: Date
-  }> {
+  async getTransactionStatus(transactionId: string): Promise<{isRollback: boolean, rollbackTransaction?: string, rollbackTime?: Date}> {
     if (!TransactionIdGenerator.validate(transactionId)) {
       throw new Error('无效的事务ID')
     }

@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-pointmint",
   "description": "Points management system plugin",
-  "version": "0.0.6-beta1",
+  "version": "0.0.6",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -13,10 +13,7 @@
   ],
   "license": "AGPL-3.0",
   "scripts": {
-    "preinstall": "corepack enable",
-    "pub": "yakumo publish",
-    "build": "yakumo build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -b"
   },
   "homepage": "https://github.com/DMB-codegang/PointMint",
   "repository": {
