@@ -1,33 +1,35 @@
-name: Publish Plugin
+name: Publish PointMint Plugin
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [ main ]
+    paths:
+      - 'external/pointmint/package.json'
 
 jobs:
-  publish:
+  build-and-publish:
     runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18.x
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Get package version
+        id: get_version
+        working-directory: external/pointmint
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
-      - name: Build plugin
-        run: npm run build
-
-      - name: Publish to npm
-        if: "!contains(github.ref, 'dev')"
+      - name: Build and publish
+        working-directory: external/pointmint
+        if: steps.get_version.outputs.VERSION != '' && !contains(steps.get_version.outputs.VERSION, 'dev')
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish
+        run: |
+          npm install
+          npm run build
+          npm run pub
