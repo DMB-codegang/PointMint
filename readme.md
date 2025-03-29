@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/koishi-plugin-pointmint?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-pointmint)
 [![License](https://img.shields.io/github/license/DMB-codegang/pointmint?style=flat-square)](LICENSE)
 
-模块化架构｜可审计事务追踪｜实时积分生态 - 基于双效校验机制的经济引擎
+模块化架构 | 高度可定制｜可审计事务追踪｜实时积分生态 - 基于双效校验机制的经济引擎
 
 ## 功能特性
 
@@ -30,7 +30,11 @@
 基础数据结构提供了必要的接口定义，用于实现插件间的交互。
 
 > [!WARNING]  
-> 插件目前还在开发版本，下面的接口在接下来的版本中可能会有变动
+> - 插件目前还在开发版本，下面的接口在接下来的版本中可能会有变动
+>
+> - 为了方便称呼，以下文档中有关于虚拟货币的称呼统一为“积分”，您可以设置您的货币为其他任意名称
+> 
+> - 如果你在使用过程中遇到了问题，欢迎提交[Issue](URL_ADDRESS.com/DMB-codegang/pointmint/issues)
 
 ```typescript
 export interface ApiResponseNoData {
