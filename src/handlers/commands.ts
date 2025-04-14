@@ -7,6 +7,10 @@ export function registerCommands(ctx: Context, service: PointService, cfg: Confi
   if (cfg.check_points_command_set) {
     ctx.command('查询积分').action(async ({ session }) => {
       const pointsResult = await service.get(session.userId, name)
+      if (pointsResult == -1) {
+        session.send('您还没有积分哦，快去获得一些吧')
+        return
+      }
       const responseText = cfg.check_points_command.replace(/\{points\}/gi, pointsResult.toString())
       session.send(responseText)
 
